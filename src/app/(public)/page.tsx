@@ -74,7 +74,7 @@ export default function LandingPage() {
             >
               Products
             </button>
-            <Link href="/login">
+            <Link href="/order">
               <Button
                 size="sm"
                 className="bg-black hover:bg-zinc-800 text-white border border-zinc-700/50"
