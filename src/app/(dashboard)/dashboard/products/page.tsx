@@ -38,6 +38,8 @@ interface Product {
   name: string;
   stock: number;
   price: number;
+  image_url?: string;
+  description?: string;
 }
 
 export default function ProductsPage() {
@@ -56,6 +58,8 @@ export default function ProductsPage() {
     name: "",
     stock: "",
     price: "",
+    image_url: "",
+    description: "",
   });
 
   useEffect(() => {
@@ -71,7 +75,7 @@ export default function ProductsPage() {
       } else {
         toast.error("Failed to fetch products");
       }
-    } catch (error) {
+    } catch {
       toast.error("Error fetching products");
     } finally {
       setIsLoading(false);
@@ -88,6 +92,8 @@ export default function ProductsPage() {
           name: formData.name,
           stock: parseInt(formData.stock),
           price: parseInt(formData.price),
+          image_url: formData.image_url,
+          description: formData.description,
         }),
       });
       const data = await res.json();
@@ -95,11 +101,11 @@ export default function ProductsPage() {
         toast.success("Product created successfully");
         fetchProducts();
         setIsAddOpen(false);
-        setFormData({ name: "", stock: "", price: "" });
+        setFormData({ name: "", stock: "", price: "", image_url: "", description: "" });
       } else {
         toast.error(data.message || "Failed to create product");
       }
-    } catch (error) {
+    } catch {
       toast.error("Error creating product");
     }
   };
@@ -116,6 +122,8 @@ export default function ProductsPage() {
           name: formData.name,
           stock: parseInt(formData.stock),
           price: parseInt(formData.price),
+          image_url: formData.image_url,
+          description: formData.description,
         }),
       });
       const data = await res.json();
@@ -127,7 +135,7 @@ export default function ProductsPage() {
       } else {
         toast.error(data.message || "Failed to update product");
       }
-    } catch (error) {
+    } catch {
       toast.error("Error updating product");
     }
   };
@@ -148,7 +156,7 @@ export default function ProductsPage() {
       } else {
         toast.error(data.message || "Failed to delete product");
       }
-    } catch (error) {
+    } catch {
       toast.error("Error deleting product");
     }
   };
@@ -159,6 +167,8 @@ export default function ProductsPage() {
       name: product.name,
       stock: product.stock.toString(),
       price: product.price.toString(),
+      image_url: product.image_url || "",
+      description: product.description || "",
     });
     setIsEditOpen(true);
   };
@@ -206,7 +216,9 @@ export default function ProductsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>No</TableHead>
+              <TableHead>Cover</TableHead>
               <TableHead>Product Name</TableHead>
+              <TableHead>Description</TableHead>
               <TableHead>Stock</TableHead>
               <TableHead>Price</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -215,7 +227,7 @@ export default function ProductsPage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={7} className="h-24 text-center">
                   <div className="flex justify-center items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" /> Loading...
                   </div>
@@ -223,7 +235,7 @@ export default function ProductsPage() {
               </TableRow>
             ) : filteredProducts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={7} className="h-24 text-center">
                   No products found.
                 </TableCell>
               </TableRow>
@@ -231,7 +243,18 @@ export default function ProductsPage() {
               filteredProducts.map((product, index) => (
                 <TableRow key={product.product_id}>
                   <TableCell>{index + 1}</TableCell>
+                  <TableCell>
+                    {product.image_url ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={product.image_url} alt={product.name} className="w-10 h-10 object-cover rounded shadow-sm" />
+                    ) : (
+                      <div className="w-10 h-10 bg-gray-100 dark:bg-zinc-800 rounded flex items-center justify-center text-[10px] text-gray-400 text-center">No Img</div>
+                    )}
+                  </TableCell>
                   <TableCell className="font-medium">{product.name}</TableCell>
+                  <TableCell className="max-w-[200px] truncate" title={product.description || ""}>
+                    {product.description || "-"}
+                  </TableCell>
                   <TableCell>{product.stock}</TableCell>
                   <TableCell>
                     Rp {product.price.toLocaleString("id-ID")}
@@ -318,6 +341,34 @@ export default function ProductsPage() {
                   required
                 />
               </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="image_url" className="text-right">
+                  Image URL
+                </Label>
+                <Input
+                  id="image_url"
+                  placeholder="https://..."
+                  value={formData.image_url}
+                  onChange={(e) =>
+                    setFormData({ ...formData, image_url: e.target.value })
+                  }
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="description" className="text-right">
+                  Description
+                </Label>
+                <textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  className="col-span-3 flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  placeholder="Brief product description..."
+                />
+              </div>
             </div>
             <DialogFooter>
               <Button
@@ -384,6 +435,34 @@ export default function ProductsPage() {
                   required
                 />
               </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-image_url" className="text-right">
+                  Image URL
+                </Label>
+                <Input
+                  id="edit-image_url"
+                  placeholder="https://..."
+                  value={formData.image_url}
+                  onChange={(e) =>
+                    setFormData({ ...formData, image_url: e.target.value })
+                  }
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-description" className="text-right">
+                  Description
+                </Label>
+                <textarea
+                  id="edit-description"
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  className="col-span-3 flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  placeholder="Brief product description..."
+                />
+              </div>
             </div>
             <DialogFooter>
               <Button
@@ -404,7 +483,7 @@ export default function ProductsPage() {
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the
-              product "{selectedProduct?.name}" and remove it from our servers.
+              product &quot;{selectedProduct?.name}&quot; and remove it from our servers.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

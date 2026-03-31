@@ -4,15 +4,22 @@ import { supabase } from "@/lib/supabase/dbHelper";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { nama, kelas, no_telp, product_id, quantity } = body;
+    const { nama, kelas, no_telp, product_id, quantity, total_price } = body;
 
     // Validate required fields
-    if (!nama || !kelas || !no_telp || !product_id || !quantity) {
+    if (
+      !nama ||
+      !kelas ||
+      !no_telp ||
+      !product_id ||
+      !quantity ||
+      !total_price
+    ) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "All fields are required: nama, kelas, no_telp, product_id, quantity",
+            "All fields are required: nama, kelas, no_telp, product_id, quantity, price",
         },
         { status: 400 },
       );
@@ -59,6 +66,7 @@ export async function POST(request: NextRequest) {
         no_telp,
         product_id,
         quantity,
+        total_price,
       })
       .select()
       .single();
@@ -79,8 +87,6 @@ export async function POST(request: NextRequest) {
 
     if (stockError) {
       console.error("Stock update error:", stockError);
-      // Note: In production, you should use database transactions
-      // to ensure atomicity of order creation and stock update
     }
 
     return NextResponse.json(

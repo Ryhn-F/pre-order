@@ -114,8 +114,10 @@ export default function LandingPage() {
                 src="/Hero_bg.png"
                 alt="Delicious 3D Food"
                 fill
+                sizes="(max-width: 768px) 100vw, 600px"
                 className="object-contain drop-shadow-2xl"
                 priority
+                unoptimized
               />
             </div>
             {/* Background glow for image */}
@@ -153,7 +155,9 @@ export default function LandingPage() {
                           src={product.image_url}
                           alt={product.name}
                           fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                           className="object-cover transition-transform duration-500 group-hover:scale-110"
+                          unoptimized
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center text-gray-500">
@@ -181,7 +185,7 @@ export default function LandingPage() {
                         Rp {product.price.toLocaleString("id-ID")}
                       </span>
                     </div>
-                    <Link href="/login">
+                    <Link href={`/order?product_id=${product.product_id}`}>
                       <Button
                         size="sm"
                         className="bg-[#6c5dd3] hover:bg-[#5b4ec2] text-white shadow-lg shadow-purple-900/30 h-8 text-xs px-3"

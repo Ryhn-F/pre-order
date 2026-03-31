@@ -37,7 +37,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, stock, price } = body;
+    const { name, stock, price, image_url, description } = body;
 
     // Validate
     if (!name || stock === undefined || price === undefined) {
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await supabase
       .from("products")
-      .insert({ name, stock, price })
+      .insert({ name, stock, price, image_url, description })
       .select()
       .single();
 

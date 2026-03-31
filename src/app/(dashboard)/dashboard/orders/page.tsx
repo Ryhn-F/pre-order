@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, Search, Loader2 } from "lucide-react";
+import * as XLSX from "xlsx";
+import { Plus, Pencil, Trash2, Search, Loader2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -220,6 +221,32 @@ export default function OrdersPage() {
       order.kelas.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
+  const exportToExcel = () => {
+    if (orders.length === 0) {
+      toast.error("No orders to export");
+      return;
+    }
+
+    const exportData = orders.map((order, index) => ({
+      No: index + 1,
+      Name: order.nama,
+      Class: order.kelas,
+      Phone: order.no_telp,
+      Product: order.product_name,
+      Quantity: order.quantity,
+      "Total Price": order.total_price,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
+    XLSX.writeFile(
+      workbook,
+      `Orders_${new Date().toISOString().split("T")[0]}.xlsx`,
+    );
+    toast.success("Exported to Excel successfully");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -229,12 +256,22 @@ export default function OrdersPage() {
             Manage your customer orders here.
           </p>
         </div>
-        <Button
-          onClick={() => setIsAddOpen(true)}
-          className="gap-2 bg-indigo-600 hover:bg-indigo-700"
-        >
-          <Plus className="h-4 w-4" /> Create Order
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={exportToExcel}
+            variant="outline"
+            className="gap-2"
+            disabled={orders.length === 0}
+          >
+            <Download className="h-4 w-4" /> Export Excel
+          </Button>
+          <Button
+            onClick={() => setIsAddOpen(true)}
+            className="gap-2 bg-indigo-600 hover:bg-indigo-700"
+          >
+            <Plus className="h-4 w-4" /> Create Order
+          </Button>
+        </div>
       </div>
 
       <div className="flex items-center gap-2">
@@ -542,7 +579,8 @@ export default function OrdersPage() {
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the
-              order for "{selectedOrder?.nama}" and remove it from our servers.
+              order for &quot;{selectedOrder?.nama}&quot; and remove it from our
+              servers.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
