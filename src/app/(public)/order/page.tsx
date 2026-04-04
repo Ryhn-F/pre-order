@@ -28,12 +28,19 @@ interface Product {
   product_id: number;
   name: string;
   price: number;
+  stock: number;
 }
 
 interface Package {
   package_id: number;
   name: string;
   price: number;
+  package_items?: {
+    quantity: number;
+    products?: {
+      stock: number;
+    };
+  }[];
 }
 
 function OrderForm() {
@@ -73,19 +80,28 @@ function OrderForm() {
         
         if (prodData.success) {
           setProducts(prodData.data);
-          if (!defaultProductId && orderMode === "product" && prodData.data.length > 0) {
+          
+          const availableProds = prodData.data.filter((p: Product) => p.stock > 0);
+          
+          if (!defaultProductId && orderMode === "product" && availableProds.length > 0) {
             setFormData((prev) => ({
               ...prev,
-              product_id: prodData.data[0].product_id.toString(),
+              product_id: availableProds[0].product_id.toString(),
             }));
           }
         }
         if (packData.success) {
           setPackages(packData.data);
-          if (!defaultPackageId && orderMode === "package" && packData.data.length > 0) {
+          
+          const availablePacks = packData.data.filter((p: Package) => {
+            if (!p.package_items) return true;
+            return p.package_items.every((item) => (item.products?.stock || 0) >= item.quantity);
+          });
+          
+          if (!defaultPackageId && orderMode === "package" && availablePacks.length > 0) {
             setFormData((prev) => ({
               ...prev,
-              package_id: packData.data[0].package_id.toString(),
+              package_id: availablePacks[0].package_id.toString(),
             }));
           }
         }
@@ -272,15 +288,20 @@ function OrderForm() {
                     <SelectValue placeholder="Select a product to order" />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-900 border-white/10 text-white">
-                    {products.map((p) => (
-                      <SelectItem
-                        key={p.product_id}
-                        value={p.product_id.toString()}
-                        className="focus:bg-purple-900/50 focus:text-white"
-                      >
-                        {p.name} - Rp {p.price.toLocaleString("id-ID")}
-                      </SelectItem>
-                    ))}
+                    {products.map((p) => {
+                      const isAvailable = p.stock > 0;
+                      return (
+                        <SelectItem
+                          key={p.product_id}
+                          value={p.product_id.toString()}
+                          className={`focus:bg-purple-900/50 focus:text-white ${!isAvailable ? 'opacity-50' : ''}`}
+                          disabled={!isAvailable}
+                        >
+                          {p.name} - Rp {p.price.toLocaleString("id-ID")}
+                          {!isAvailable && " (Out of Stock)"}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               ) : (
@@ -295,15 +316,28 @@ function OrderForm() {
                     <SelectValue placeholder="Select a package to order" />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-900 border-white/10 text-white">
-                    {packages.map((p) => (
-                      <SelectItem
-                        key={p.package_id}
-                        value={p.package_id.toString()}
-                        className="focus:bg-purple-900/50 focus:text-white"
-                      >
-                        {p.name} - Rp {p.price.toLocaleString("id-ID")}
-                      </SelectItem>
-                    ))}
+                    {packages.map((p) => {
+                      let isAvailable = true;
+                      if (p.package_items) {
+                        for (const item of p.package_items) {
+                          if ((item.products?.stock || 0) < item.quantity) {
+                            isAvailable = false;
+                            break;
+                          }
+                        }
+                      }
+                      return (
+                        <SelectItem
+                          key={p.package_id}
+                          value={p.package_id.toString()}
+                          className={`focus:bg-purple-900/50 focus:text-white ${!isAvailable ? 'opacity-50' : ''}`}
+                          disabled={!isAvailable}
+                        >
+                          {p.name} - Rp {p.price.toLocaleString("id-ID")}
+                          {!isAvailable && " (Out of Stock)"}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               )}
