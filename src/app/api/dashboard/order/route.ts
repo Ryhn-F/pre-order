@@ -55,6 +55,10 @@ export async function GET(request: NextRequest) {
         products (
           name,
           price
+        ),
+        packages (
+          name,
+          price
         )
       `,
         { count: "exact" },
@@ -71,17 +75,29 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform orders to include calculated total
-    const transformedOrders = orders?.map((order) => ({
-      id: order.id,
-      nama: order.nama,
-      kelas: order.kelas,
-      no_telp: order.no_telp,
-      product_id: order.product_id,
-      product_name: order.products?.name || "Unknown Product",
-      product_price: order.products?.price || 0,
-      quantity: order.quantity,
-      total_price: (order.products?.price || 0) * order.quantity,
-    }));
+    const transformedOrders = orders?.map((order) => {
+      const isPackage = !!order.package_id;
+      const itemName = isPackage 
+        ? order.packages?.name || "Unknown Package" 
+        : order.products?.name || "Unknown Product";
+      const itemPrice = isPackage 
+        ? order.packages?.price || 0 
+        : order.products?.price || 0;
+
+      return {
+        id: order.id,
+        nama: order.nama,
+        kelas: order.kelas,
+        no_telp: order.no_telp,
+        product_id: order.product_id,
+        package_id: order.package_id,
+        product_name: itemName,
+        product_price: itemPrice,
+        quantity: order.quantity,
+        total_price: itemPrice * order.quantity,
+        is_package: isPackage,
+      };
+    });
 
     return NextResponse.json(
       {

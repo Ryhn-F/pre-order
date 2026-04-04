@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,13 +30,24 @@ interface Product {
   price: number;
 }
 
+interface Package {
+  package_id: number;
+  name: string;
+  price: number;
+}
+
 function OrderForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const defaultProductId = searchParams.get("product_id");
+  const defaultPackageId = searchParams.get("package_id");
+
+  const [orderMode, setOrderMode] = useState<"product" | "package">(
+    defaultPackageId ? "package" : "product"
+  );
 
   const [products, setProducts] = useState<Product[]>([]);
-  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -46,44 +57,63 @@ function OrderForm() {
     kelas: "",
     no_telp: "",
     product_id: defaultProductId || "",
+    package_id: defaultPackageId || "",
     quantity: "1",
   });
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch("/api/products");
-        const data = await res.json();
-        if (data.success) {
-          setProducts(data.data);
-          // Auto select if product_id from query is not found but there are products
-          if (!defaultProductId && data.data.length > 0) {
+        const [prodRes, packRes] = await Promise.all([
+          fetch("/api/products"),
+          fetch("/api/packages"),
+        ]);
+        const prodData = await prodRes.json();
+        const packData = await packRes.json();
+        
+        if (prodData.success) {
+          setProducts(prodData.data);
+          if (!defaultProductId && orderMode === "product" && prodData.data.length > 0) {
             setFormData((prev) => ({
               ...prev,
-              product_id: data.data[0].product_id.toString(),
+              product_id: prodData.data[0].product_id.toString(),
+            }));
+          }
+        }
+        if (packData.success) {
+          setPackages(packData.data);
+          if (!defaultPackageId && orderMode === "package" && packData.data.length > 0) {
+            setFormData((prev) => ({
+              ...prev,
+              package_id: packData.data[0].package_id.toString(),
             }));
           }
         }
       } catch (error) {
-        console.error("Failed to fetch products", error);
-        toast.error("Failed to load products");
+        console.error("Failed to fetch data", error);
+        toast.error("Failed to load products and packages");
       } finally {
-        setLoadingProducts(false);
+        setLoadingData(false);
       }
     };
 
-    fetchProducts();
-  }, [defaultProductId]);
+    fetchData();
+  }, [defaultProductId, defaultPackageId, orderMode]);
 
   const selectedProduct = products.find(
     (p) => p.product_id.toString() === formData.product_id,
   );
-  const totalPrice = selectedProduct
-    ? selectedProduct.price * parseInt(formData.quantity || "0")
-    : 0;
+  const selectedPackage = packages.find(
+    (p) => p.package_id.toString() === formData.package_id,
+  );
+  
+  const totalPrice = orderMode === "product"
+    ? (selectedProduct ? selectedProduct.price * parseInt(formData.quantity || "0") : 0)
+    : (selectedPackage ? selectedPackage.price * parseInt(formData.quantity || "0") : 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
     setSubmitting(true);
 
     try {
@@ -94,7 +124,8 @@ function OrderForm() {
           nama: formData.nama,
           kelas: formData.kelas,
           no_telp: formData.no_telp,
-          product_id: parseInt(formData.product_id),
+          product_id: orderMode === "product" ? parseInt(formData.product_id) : undefined,
+          package_id: orderMode === "package" ? parseInt(formData.package_id) : undefined,
           quantity: parseInt(formData.quantity),
           total_price: totalPrice,
         }),
@@ -108,7 +139,7 @@ function OrderForm() {
       } else {
         toast.error(data.message || "Failed to place order");
       }
-    } catch (error) {
+    } catch {
       toast.error("Network error, failed to place order");
     } finally {
       setSubmitting(false);
@@ -128,7 +159,7 @@ function OrderForm() {
         </CardTitle>
         <CardDescription className="text-gray-400 mb-8">
           Thank you, {formData.nama}. Your order for {formData.quantity}x{" "}
-          {selectedProduct?.name} has been placed successfully.
+          {orderMode === "product" ? selectedProduct?.name : selectedPackage?.name} has been placed successfully.
         </CardDescription>
         <Link href="/">
           <Button className="w-full bg-[#6c5dd3] hover:bg-[#5b4ec2] text-white">
@@ -200,41 +231,83 @@ function OrderForm() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="product" className="text-gray-200">
-              Select Product
-            </Label>
-            {loadingProducts ? (
-              <div className="flex h-10 items-center px-3 bg-black/50 border border-white/10 rounded-md">
-                <Loader2 className="h-4 w-4 animate-spin text-purple-500 mr-2" />
-                <span className="text-sm text-gray-400">
-                  Loading products...
-                </span>
-              </div>
-            ) : (
-              <Select
-                value={formData.product_id}
-                onValueChange={(val) =>
-                  setFormData({ ...formData, product_id: val })
-                }
-                required
+          <div className="space-y-4">
+            <div className="flex bg-black/50 p-1 rounded-lg border border-white/10 gap-1">
+              <button
+                type="button"
+                className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${orderMode === "product" ? "bg-[#6c5dd3] text-white shadow-md shadow-purple-900/30" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
+                onClick={() => setOrderMode("product")}
               >
-                <SelectTrigger className="bg-black/50 border-white/10 text-white focus:ring-purple-500">
-                  <SelectValue placeholder="Select a product to order" />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-white/10 text-white">
-                  {products.map((p) => (
-                    <SelectItem
-                      key={p.product_id}
-                      value={p.product_id.toString()}
-                      className="focus:bg-purple-900/50 focus:text-white"
-                    >
-                      {p.name} - Rp {p.price.toLocaleString("id-ID")}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+                À La Carte
+              </button>
+              <button
+                type="button"
+                className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${orderMode === "package" ? "bg-[#6c5dd3] text-white shadow-md shadow-purple-900/30" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
+                onClick={() => setOrderMode("package")}
+              >
+                Packages
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="item-select" className="text-gray-200">
+                Select {orderMode === "product" ? "Product" : "Package"}
+              </Label>
+              {loadingData ? (
+                <div className="flex h-10 items-center px-3 bg-black/50 border border-white/10 rounded-md">
+                  <Loader2 className="h-4 w-4 animate-spin text-purple-500 mr-2" />
+                  <span className="text-sm text-gray-400">
+                    Loading {orderMode === "product" ? "products" : "packages"}...
+                  </span>
+                </div>
+              ) : orderMode === "product" ? (
+                <Select
+                  value={formData.product_id}
+                  onValueChange={(val) =>
+                    setFormData({ ...formData, product_id: val })
+                  }
+                  required
+                >
+                  <SelectTrigger className="bg-black/50 border-white/10 text-white focus:ring-purple-500">
+                    <SelectValue placeholder="Select a product to order" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-white/10 text-white">
+                    {products.map((p) => (
+                      <SelectItem
+                        key={p.product_id}
+                        value={p.product_id.toString()}
+                        className="focus:bg-purple-900/50 focus:text-white"
+                      >
+                        {p.name} - Rp {p.price.toLocaleString("id-ID")}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Select
+                  value={formData.package_id}
+                  onValueChange={(val) =>
+                    setFormData({ ...formData, package_id: val })
+                  }
+                  required
+                >
+                  <SelectTrigger className="bg-black/50 border-white/10 text-white focus:ring-purple-500">
+                    <SelectValue placeholder="Select a package to order" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-white/10 text-white">
+                    {packages.map((p) => (
+                      <SelectItem
+                        key={p.package_id}
+                        value={p.package_id.toString()}
+                        className="focus:bg-purple-900/50 focus:text-white"
+                      >
+                        {p.name} - Rp {p.price.toLocaleString("id-ID")}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -265,7 +338,7 @@ function OrderForm() {
           <Button
             type="submit"
             className="w-full bg-[#6c5dd3] hover:bg-[#5b4ec2] text-white shadow-lg shadow-purple-900/30 h-12 text-lg"
-            disabled={submitting || loadingProducts || !formData.product_id}
+            disabled={submitting || loadingData || (orderMode === "product" ? !formData.product_id : !formData.package_id)}
           >
             {submitting ? (
               <>

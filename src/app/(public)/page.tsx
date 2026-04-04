@@ -24,27 +24,44 @@ interface Product {
   description: string;
 }
 
+interface Package {
+  package_id: number;
+  name: string;
+  price: number;
+  image_url?: string;
+  description?: string;
+}
+
 export default function LandingPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [packages, setPackages] = useState<Package[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch("/api/products");
-        const data = await res.json();
-        if (data.success) {
-          setProducts(data.data);
+        const [prodRes, packRes] = await Promise.all([
+          fetch("/api/products"),
+          fetch("/api/packages"),
+        ]);
+        const prodData = await prodRes.json();
+        const packData = await packRes.json();
+        
+        if (prodData.success) {
+          setProducts(prodData.data);
+        }
+        if (packData.success) {
+          setPackages(packData.data);
         }
       } catch (error) {
-        console.error("Failed to fetch products", error);
-        toast.error("Failed to load products");
+        console.error("Failed to fetch data", error);
+        toast.error("Failed to load products and packages");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProducts();
+    fetchData();
   }, []);
 
   const scrollToProducts = () => {
@@ -125,14 +142,97 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Products Section */}
+        {/* Packages Section */}
         <section
-          id="products-section"
-          className="container mx-auto min-h-screen px-6 py-24"
+          id="packages-section"
+          className="container mx-auto px-6 py-24"
         >
           <div className="mb-16 text-center">
             <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
-              Our Products !
+              Packages !
+            </h2>
+            <div className="mt-4 h-1 w-24 mx-auto bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full" />
+          </div>
+
+          {loading ? (
+            <div className="flex h-64 items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+            </div>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 xl:gap-8 mb-12">
+              {packages.map((pkg) => (
+                <Card
+                  key={pkg.package_id}
+                  className="group overflow-hidden border-0 bg-black/40 backdrop-blur-sm shadow-xl transition-all hover:scale-[1.02] hover:bg-black/60 hover:shadow-purple-900/10 p-0"
+                >
+                  <CardHeader className="p-0">
+                    <div className="relative aspect-square w-full overflow-hidden bg-gradient-to-b from-white/5 to-white/10">
+                      {pkg.image_url ? (
+                        <Image
+                          src={pkg.image_url}
+                          alt={pkg.name}
+                          fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                          className="object-cover transition-transform duration-500 group-hover:scale-110"
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-gray-500">
+                          <ShoppingCart className="h-12 w-12 opacity-20" />
+                        </div>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <CardTitle className="mb-2 text-lg font-bold text-white">
+                      {pkg.name}
+                    </CardTitle>
+                    <CardDescription className="text-xs text-gray-400 line-clamp-2 min-h-8">
+                      {pkg.description ? (
+                        pkg.description
+                      ) : (
+                        <span className="text-purple-400">Special Package Deal</span>
+                      )}
+                    </CardDescription>
+                  </CardContent>
+                  <CardFooter className="flex items-center justify-between p-4 pt-0">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-gray-500 uppercase tracking-wider">
+                        Price
+                      </span>
+                      <span className="text-base font-bold text-white">
+                        Rp {pkg.price.toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                    <Link href={`/order?package_id=${pkg.package_id}`}>
+                      <Button
+                        size="sm"
+                        className="bg-[#6c5dd3] hover:bg-[#5b4ec2] text-white shadow-lg shadow-purple-900/30 h-8 text-xs px-3"
+                      >
+                        Order Now
+                      </Button>
+                    </Link>
+                  </CardFooter>
+                </Card>
+              ))}
+
+              {!loading && packages.length === 0 && (
+                <div className="col-span-full text-center text-gray-500">
+                  No packages available at the moment.
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+
+        {/* Products Section */}
+        <section
+          id="products-section"
+          className="container mx-auto px-6 py-12 mb-24"
+        >
+          <div className="mb-16 text-center">
+            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
+              À La Carte !
             </h2>
             <div className="mt-4 h-1 w-24 mx-auto bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full" />
           </div>

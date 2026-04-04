@@ -10,6 +10,7 @@ import {
   LogOut,
   Sparkles,
   Users,
+  Gift,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +32,11 @@ const sidebarItems = [
         title: "Products",
         href: "/dashboard/products",
         icon: ShoppingCart,
+      },
+      {
+        title: "Packages",
+        href: "/dashboard/packages",
+        icon: Gift,
       },
     ],
   },

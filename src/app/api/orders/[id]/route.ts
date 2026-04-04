@@ -8,12 +8,12 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    // Allow updating quantity or other fields if needed, simplified for now
-    const { quantity, kelas, nama, no_telp } = body;
+    // Allow updating quantity or other fields if needed
+    const { quantity, kelas, nama, no_telp, total_price } = body;
 
     const { data, error } = await supabase
       .from("pre_orders")
-      .update({ quantity, kelas, nama, no_telp })
+      .update(total_price ? { quantity, kelas, nama, no_telp, total_price } : { quantity, kelas, nama, no_telp })
       .eq("id", id)
       .select()
       .single();
