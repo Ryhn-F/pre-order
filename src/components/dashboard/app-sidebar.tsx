@@ -41,6 +41,21 @@ const sidebarItems = [
     ],
   },
   {
+    title: "Cashier",
+    items: [
+      {
+        title: "POS",
+        href: "/dashboard/cashier",
+        icon: ShoppingCart, // using ShoppingCart to avoid missing Calculator icon
+      },
+      {
+        title: "Active Orders",
+        href: "/dashboard/cashier/orders",
+        icon: Package, // using Package to avoid missing ListOrdered icon
+      },
+    ],
+  },
+  {
     title: "Settings",
     items: [
       {

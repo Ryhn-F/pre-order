@@ -4,12 +4,12 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Check if the request is for a dashboard route
-  if (pathname.startsWith("/dashboard")) {
+  if (pathname == "/" || pathname.startsWith("/dashboard")) {
     const sessionToken = request.cookies.get("session_token")?.value;
 
     // If no session token, redirect to login
     if (!sessionToken) {
-      const loginUrl = new URL("/", request.url);
+      const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(loginUrl);
     }
@@ -23,7 +23,7 @@ export function middleware(request: NextRequest) {
       // Check if token is expired
       if (decoded.exp < Date.now()) {
         // Clear the expired cookie and redirect to login
-        const response = NextResponse.redirect(new URL("/", request.url));
+        const response = NextResponse.redirect(new URL("/login", request.url));
         response.cookies.delete("session_token");
         return response;
       }
@@ -32,7 +32,7 @@ export function middleware(request: NextRequest) {
       return NextResponse.next();
     } catch {
       // Invalid token format, redirect to login
-      const response = NextResponse.redirect(new URL("/", request.url));
+      const response = NextResponse.redirect(new URL("/login", request.url));
       response.cookies.delete("session_token");
       return response;
     }
@@ -42,14 +42,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
-  ],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };

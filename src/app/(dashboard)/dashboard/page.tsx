@@ -16,22 +16,33 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchStats() {
       try {
-        const [productsRes, ordersRes] = await Promise.all([
+        const [productsRes, ordersRes, cashierRes] = await Promise.all([
           fetch("/api/products"),
           fetch("/api/dashboard/order?limit=1000"), // get all for calc
+          fetch("/api/cashier/orders"),
         ]);
 
         const productsData = await productsRes.json();
         const ordersData = await ordersRes.json();
+        const cashierData = await cashierRes.json();
+        
+        let totalRevenue = 0;
+        let totalOrders = 0;
 
-        if (productsData.success && ordersData.success) {
-          const totalRevenue = ordersData.data.reduce(
-            (acc: number, order: any) => acc + (order.total_price || 0),
-            0,
-          );
+        if (ordersData.success) {
+           totalRevenue += ordersData.data.reduce((acc: number, order: any) => acc + (order.total_price || 0), 0);
+           totalOrders += ordersData.pagination?.total || 0;
+        }
+        
+        if (cashierData.success) {
+           totalRevenue += cashierData.data.reduce((acc: number, order: any) => acc + (order.total_price || 0), 0);
+           totalOrders += cashierData.data.length || 0;
+        }
+
+        if (productsData.success) {
           setStats({
-            totalProducts: productsData.total || 0,
-            totalOrders: ordersData.pagination?.total || 0,
+            totalProducts: productsData.total || productsData.data?.length || 0,
+            totalOrders,
             totalRevenue,
           });
         }
