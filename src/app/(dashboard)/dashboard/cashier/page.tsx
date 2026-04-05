@@ -117,10 +117,9 @@ export default function CashierPage() {
 
   const updateQuantity = (id: number, type: "product" | "package", delta: number) => {
     setCart(prev => {
-      return prev.map(c => {
+      const nextCart = prev.map(c => {
         if (c.id === id && c.type === type) {
           const newQ = c.quantity + delta;
-          // If increasing quantity, check stock first
           if (delta > 0) {
             const itemOriginal = type === "product" ? products.find(p => p.product_id === id) : packages.find(p => p.package_id === id);
             if (itemOriginal && getAvailableStock(itemOriginal, type) <= 0) {
@@ -128,10 +127,11 @@ export default function CashierPage() {
                return c;
             }
           }
-          return newQ > 0 ? { ...c, quantity: newQ } : c;
+          return { ...c, quantity: newQ };
         }
         return c;
       });
+      return nextCart.filter(c => c.quantity > 0);
     });
   };
 
@@ -268,7 +268,7 @@ export default function CashierPage() {
 
       {/* Right side: Cart Checkout */}
       <div className="w-80 lg:w-96 flex flex-col bg-slate-50 border rounded-xl shadow-sm dark:bg-zinc-900 overflow-hidden">
-        <div className="p-4 border-b bg-white dark:bg-zinc-950 flex items-center justify-between">
+        <div className="p-4 border-b bg-white dark:bg-zinc-950 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2 font-semibold">
             <ShoppingCart className="h-5 w-5 text-indigo-600" />
             Current Order
@@ -278,7 +278,7 @@ export default function CashierPage() {
           </span>
         </div>
         
-        <ScrollArea className="flex-1 p-4">
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 custom-scrollbar">
           {cart.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-4 mt-20">
               <ShoppingCart className="h-12 w-12 opacity-20" />
@@ -305,9 +305,9 @@ export default function CashierPage() {
               ))}
             </div>
           )}
-        </ScrollArea>
+        </div>
         
-        <div className="bg-white dark:bg-zinc-950 border-t p-4 space-y-4">
+        <div className="bg-white dark:bg-zinc-950 border-t p-4 space-y-4 shrink-0">
            <div className="space-y-2">
              <Label htmlFor="custName">Customer Name (Optional)</Label>
              <Input id="custName" placeholder="e.g. John Doe" value={customerName} onChange={e => setCustomerName(e.target.value)} />

@@ -50,7 +50,28 @@ export async function POST(request: NextRequest) {
            await supabase.from("products").update({ stock: prod.stock - item.quantity }).eq("product_id", item.id);
          }
       } else if (item.type === "package") {
-         // Also handle package logic if necessary
+         const { data: pkgItems } = await supabase
+           .from("package_items")
+           .select("product_id, quantity")
+           .eq("package_id", item.id);
+
+         if (pkgItems) {
+           for (const pkgItem of pkgItems) {
+             const requiredDeduction = pkgItem.quantity * item.quantity;
+             const { data: prod } = await supabase
+               .from("products")
+               .select("stock")
+               .eq("product_id", pkgItem.product_id)
+               .single();
+
+             if (prod) {
+               await supabase
+                 .from("products")
+                 .update({ stock: prod.stock - requiredDeduction })
+                 .eq("product_id", pkgItem.product_id);
+             }
+           }
+         }
       }
     }
     
