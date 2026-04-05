@@ -192,7 +192,7 @@ export default function CashierOrdersPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-6 grid w-[400px] grid-cols-2">
+        <TabsList className="mb-6 grid w-full max-w-[400px] grid-cols-2">
           <TabsTrigger value="in progress" className="relative">
             In Progress
             {inProgressOrders.length > 0 && (

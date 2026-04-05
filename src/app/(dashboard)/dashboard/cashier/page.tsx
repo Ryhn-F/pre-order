@@ -174,9 +174,9 @@ export default function CashierPage() {
   const filteredPackages = packages.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="flex h-[calc(100vh-100px)] gap-6">
+    <div className="flex flex-col md:flex-row h-auto min-h-[calc(100vh-100px)] md:h-[calc(100vh-100px)] gap-4 lg:gap-6 mb-8 md:mb-0">
       {/* Left side: Items */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-white rounded-xl border shadow-sm dark:bg-zinc-950">
+      <div className="flex-1 flex flex-col overflow-hidden bg-white rounded-xl border shadow-sm dark:bg-zinc-950 min-h-[500px]">
         <div className="p-4 border-b flex items-center justify-between">
           <h2 className="text-xl font-bold tracking-tight">Point of Sale</h2>
           <div className="flex items-center gap-2">
@@ -267,7 +267,7 @@ export default function CashierPage() {
       </div>
 
       {/* Right side: Cart Checkout */}
-      <div className="w-80 lg:w-96 flex flex-col bg-slate-50 border rounded-xl shadow-sm dark:bg-zinc-900 overflow-hidden">
+      <div className="w-full md:w-72 lg:w-96 flex flex-col bg-slate-50 border rounded-xl shadow-sm dark:bg-zinc-900 overflow-hidden shrink-0 h-[500px] md:h-auto">
         <div className="p-4 border-b bg-white dark:bg-zinc-950 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2 font-semibold">
             <ShoppingCart className="h-5 w-5 text-indigo-600" />
